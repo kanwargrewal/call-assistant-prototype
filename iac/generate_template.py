@@ -84,7 +84,7 @@ Resources:
           - Effect: Allow
             Principal: "*"
             Action: "s3:GetObject"
-            Resource: !Sub "${FrontendBucket}/*"
+            Resource: !Sub "arn:aws:s3:::${FrontendBucket}/*"
   FrontendDistribution:
     Type: AWS::CloudFront::Distribution
     DependsOn: FrontendBucket
