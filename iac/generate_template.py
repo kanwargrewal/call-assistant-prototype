@@ -2,26 +2,53 @@ import os
 
 
 def generate_cloudformation():
-    bucket = os.environ.get("LAMBDA_S3_BUCKET", "my-bucket")
-    key = os.environ.get("LAMBDA_S3_KEY", "lambda.zip")
-    handler = os.environ.get("LAMBDA_HANDLER", "main.handler")
-    runtime = os.environ.get("LAMBDA_RUNTIME", "python3.10")
-    frontend_bucket = os.environ.get("FRONTEND_S3_BUCKET", "call-assistant-frontend-bucket")
-    origin = f"{frontend_bucket}.s3.amazonaws.com"
+    # Default values - can be overridden by CloudFormation parameters
+    default_bucket = os.environ.get("LAMBDA_S3_BUCKET", "my-bucket")
+    default_key = os.environ.get("LAMBDA_S3_KEY", "lambda.zip")
+    default_handler = os.environ.get("LAMBDA_HANDLER", "main.handler")
+    default_runtime = os.environ.get("LAMBDA_RUNTIME", "python3.10")
+    default_frontend_bucket = os.environ.get("FRONTEND_S3_BUCKET", "call-assistant-frontend-bucket")
 
     template = f"""
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Call Assistant Deployment
+
+Parameters:
+  LambdaS3Bucket:
+    Type: String
+    Default: {default_bucket}
+    Description: S3 bucket containing Lambda deployment package
+  
+  LambdaS3Key:
+    Type: String
+    Default: {default_key}
+    Description: S3 key for Lambda deployment package
+  
+  LambdaHandler:
+    Type: String
+    Default: {default_handler}
+    Description: Lambda function handler
+  
+  LambdaRuntime:
+    Type: String
+    Default: {default_runtime}
+    Description: Lambda runtime version
+  
+  FrontendS3Bucket:
+    Type: String
+    Default: {default_frontend_bucket}
+    Description: S3 bucket for frontend hosting
+
 Resources:
   BackendFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Handler: {handler}
+      Handler: !Ref LambdaHandler
       Role: !GetAtt LambdaExecutionRole.Arn
-      Runtime: {runtime}
+      Runtime: !Ref LambdaRuntime
       Code:
-        S3Bucket: {bucket}
-        S3Key: {key}
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref LambdaS3Key
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -37,7 +64,7 @@ Resources:
   FrontendBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: {frontend_bucket}
+      BucketName: !Ref FrontendS3Bucket
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: error.html
@@ -63,7 +90,7 @@ Resources:
         Enabled: true
         Origins:
           - Id: frontend
-            DomainName: {origin}
+            DomainName: !Sub "${{FrontendS3Bucket}}.s3.amazonaws.com"
             S3OriginConfig:
               OriginAccessIdentity: ""
         DefaultCacheBehavior:

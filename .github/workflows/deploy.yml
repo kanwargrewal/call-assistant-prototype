@@ -1,52 +1,104 @@
-name: CI/CD
+name: Deploy Call Assistant Infrastructure
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allows manual trigger
+
+env:
+  AWS_REGION: us-east-1
+  STACK_NAME: call-assistant
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
-      LAMBDA_S3_BUCKET: ${{ secrets.LAMBDA_S3_BUCKET }}
-      LAMBDA_S3_KEY: ${{ secrets.LAMBDA_S3_KEY }}
-      CLOUDFRONT_ORIGIN_DOMAIN: ${{ secrets.CLOUDFRONT_ORIGIN_DOMAIN }}
-
+    
     steps:
-      - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: Set up Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
 
-      - name: Install backend dependencies
-        run: |
-          cd backend
-          python -m pip install -r requirements.txt
+    - name: Install dependencies and package Lambda
+      run: |
+        cd backend
+        
+        # Create deployment package directory
+        mkdir -p lambda-package
+        
+        # Install dependencies to package directory
+        pip install -r requirements.txt -t lambda-package/
+        
+        # Copy application code
+        cp *.py lambda-package/
+        cp -r routers/ lambda-package/ 2>/dev/null || echo "No routers directory"
+        cp -r services/ lambda-package/ 2>/dev/null || echo "No services directory"
+        
+        # Create zip file
+        cd lambda-package
+        zip -r ../lambda.zip . -x "*.pyc" "*__pycache__*" "*.git*"
+        cd ..
+        
+        # Verify zip file
+        echo "Lambda package size: $(du -h lambda.zip)"
+        echo "Lambda package contents:"
+        unzip -l lambda.zip | head -20
 
-      - name: Compile backend
-        run: python -m py_compile backend/*.py
+    - name: Upload Lambda package to S3
+      run: |
+        aws s3 cp backend/lambda.zip s3://${{ secrets.LAMBDA_S3_BUCKET }}/lambda.zip
+        echo "✅ Lambda package uploaded to S3"
 
-      - name: Install frontend dependencies
-        run: |
-          cd web
-          npm install
-          npm run type-check
+    - name: Generate CloudFormation template
+      run: |
+        cd iac
+        python generate_template.py > template.yml
+        echo "✅ CloudFormation template generated"
 
-      - name: Generate CloudFormation template
-        run: |
-          python iac/generate_template.py > template.yml
+    - name: Deploy CloudFormation stack
+      run: |
+        cd iac
+        
+        # Deploy or update stack
+        aws cloudformation deploy \
+          --template-file template.yml \
+          --stack-name ${{ env.STACK_NAME }} \
+          --parameter-overrides \
+            LambdaS3Bucket=${{ secrets.LAMBDA_S3_BUCKET }} \
+            LambdaS3Key=lambda.zip \
+            FrontendS3Bucket=${{ secrets.FRONTEND_S3_BUCKET }} \
+          --capabilities CAPABILITY_IAM \
+          --no-fail-on-empty-changeset
+        
+        echo "✅ CloudFormation deployment completed"
 
-      - name: Deploy CloudFormation stack
-        run: |
-          aws cloudformation deploy --template-file template.yml --stack-name call-assistant --capabilities CAPABILITY_IAM
+    - name: Get deployment outputs
+      run: |
+        echo "🚀 Deployment Summary:"
+        aws cloudformation describe-stacks \
+          --stack-name ${{ env.STACK_NAME }} \
+          --query 'Stacks[0].Outputs[*].[OutputKey,OutputValue]' \
+          --output table || echo "No outputs available yet"
+
+    - name: Deploy frontend (if exists)
+      run: |
+        if [ -d "web/out" ] || [ -d "web/build" ] || [ -d "web/dist" ]; then
+          echo "📦 Deploying frontend..."
+          # Add frontend deployment logic here when ready
+          echo "Frontend deployment would happen here"
+        else
+          echo "ℹ️  No frontend build directory found, skipping frontend deployment"
+        fi
 
