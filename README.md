@@ -71,3 +71,8 @@ The system uses PostgreSQL with the following main entities:
 ## API Documentation
 
 Once the backend is running, visit `http://localhost:8000/docs` for interactive API documentation. 
+## Deployment
+
+The `iac/generate_template.py` script creates an AWS CloudFormation template for deploying the backend Lambda function and a CloudFront distribution for the frontend. The workflow defined in `.github/workflows/deploy.yml` runs on pushes to `main`, executes basic tests, generates the template and deploys it using the AWS credentials stored in GitHub secrets.
+
+Required secrets include `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `LAMBDA_S3_BUCKET`, `LAMBDA_S3_KEY` and `CLOUDFRONT_ORIGIN_DOMAIN`.
