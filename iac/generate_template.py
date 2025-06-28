@@ -85,12 +85,13 @@ Resources:
             Resource: !Sub "${{FrontendBucket}}/*"
   FrontendDistribution:
     Type: AWS::CloudFront::Distribution
+    DependsOn: FrontendBucket
     Properties:
       DistributionConfig:
         Enabled: true
         Origins:
           - Id: frontend
-            DomainName: !Sub "${{FrontendS3Bucket}}.s3.amazonaws.com"
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
             S3OriginConfig:
               OriginAccessIdentity: ""
         DefaultCacheBehavior:

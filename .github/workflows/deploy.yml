@@ -8,7 +8,7 @@ on:
   workflow_dispatch:  # Allows manual trigger
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: us-west-1
   STACK_NAME: call-assistant
 
 jobs:
