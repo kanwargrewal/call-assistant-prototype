@@ -1,0 +1,45 @@
+name: Debug CloudFormation Deployment
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+env:
+  AWS_REGION: us-east-1
+  STACK_NAME: call-assistant
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Check CloudFormation stack events
+      run: |
+        echo "🔍 Checking CloudFormation stack events..."
+        aws cloudformation describe-stack-events --stack-name ${{ env.STACK_NAME }} --region ${{ env.AWS_REGION }} || echo "Stack might not exist"
+
+    - name: Check CloudFormation stack status
+      run: |
+        echo "📊 Checking CloudFormation stack status..."
+        aws cloudformation describe-stacks --stack-name ${{ env.STACK_NAME }} --region ${{ env.AWS_REGION }} || echo "Stack might not exist"
+
+    - name: List CloudFormation stacks
+      run: |
+        echo "📋 Listing all CloudFormation stacks..."
+        aws cloudformation list-stacks --region ${{ env.AWS_REGION }}
+
+    - name: Check S3 bucket contents
+      run: |
+        echo "🪣 Checking Lambda S3 bucket..."
+        aws s3 ls s3://${{ secrets.LAMBDA_S3_BUCKET }}/ || echo "Could not access S3 bucket"
+
+    - name: Check if lambda.zip exists
+      run: |
+        echo "📦 Checking if lambda.zip exists..."
+        aws s3 ls s3://${{ secrets.LAMBDA_S3_BUCKET }}/lambda.zip || echo "lambda.zip not found" 
