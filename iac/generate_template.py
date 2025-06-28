@@ -106,6 +106,31 @@ Resources:
             Cookies:
               Forward: none
           Compress: true
+
+Outputs:
+  FrontendBucketName:
+    Description: Name of the S3 bucket for frontend hosting
+    Value: !Ref FrontendBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-FrontendBucket"
+  
+  FrontendDistributionId:
+    Description: CloudFront Distribution ID
+    Value: !Ref FrontendDistribution
+    Export:
+      Name: !Sub "${AWS::StackName}-FrontendDistributionId"
+  
+  FrontendDistributionDomain:
+    Description: CloudFront Distribution Domain Name
+    Value: !GetAtt FrontendDistribution.DomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-FrontendDistributionDomain"
+  
+  LambdaFunctionArn:
+    Description: Lambda Function ARN
+    Value: !GetAtt BackendFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-LambdaArn"
 """
 
     # Combine sections into complete template

@@ -92,13 +92,63 @@ jobs:
           --query 'Stacks[0].Outputs[*].[OutputKey,OutputValue]' \
           --output table || echo "No outputs available yet"
 
-    - name: Deploy frontend (if exists)
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: web/package-lock.json
+
+    - name: Install frontend dependencies
       run: |
-        if [ -d "web/out" ] || [ -d "web/build" ] || [ -d "web/dist" ]; then
-          echo "📦 Deploying frontend..."
-          # Add frontend deployment logic here when ready
-          echo "Frontend deployment would happen here"
+        cd web
+        npm ci
+
+    - name: Build frontend
+      run: |
+        cd web
+        npm run build
+        echo "✅ Frontend built successfully"
+
+    - name: Deploy frontend to S3
+      run: |
+        cd web
+        
+        # Sync the built files to S3
+        if [ -d "out" ]; then
+          # Next.js static export
+          aws s3 sync out/ s3://${{ secrets.FRONTEND_S3_BUCKET }}/ --delete
+          echo "✅ Frontend deployed from 'out' directory"
+        elif [ -d ".next" ]; then
+          # Next.js build (need to handle this differently for static hosting)
+          echo "⚠️  Next.js server build detected. Configure static export in next.config.js"
+          echo "For S3 hosting, add: output: 'export' to next.config.js"
+        elif [ -d "dist" ]; then
+          # Vite/other build tools
+          aws s3 sync dist/ s3://${{ secrets.FRONTEND_S3_BUCKET }}/ --delete
+          echo "✅ Frontend deployed from 'dist' directory"
+        elif [ -d "build" ]; then
+          # Create React App build
+          aws s3 sync build/ s3://${{ secrets.FRONTEND_S3_BUCKET }}/ --delete
+          echo "✅ Frontend deployed from 'build' directory"
         else
-          echo "ℹ️  No frontend build directory found, skipping frontend deployment"
+          echo "❌ No build output directory found"
+          exit 1
+        fi
+        
+        # Invalidate CloudFront cache to see changes immediately
+        DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+          --stack-name ${{ env.STACK_NAME }} \
+          --query 'Stacks[0].Outputs[?OutputKey==`FrontendDistributionId`].OutputValue' \
+          --output text 2>/dev/null || echo "")
+        
+        if [ -n "$DISTRIBUTION_ID" ]; then
+          echo "🔄 Invalidating CloudFront cache..."
+          aws cloudfront create-invalidation \
+            --distribution-id $DISTRIBUTION_ID \
+            --paths "/*"
+          echo "✅ CloudFront cache invalidated"
+        else
+          echo "ℹ️  CloudFront distribution ID not found in outputs"
         fi
 
