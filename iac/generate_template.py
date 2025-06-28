@@ -75,6 +75,7 @@ Resources:
         RestrictPublicBuckets: false
   FrontendBucketPolicy:
     Type: AWS::S3::BucketPolicy
+    DependsOn: FrontendBucket
     Properties:
       Bucket: !Ref FrontendBucket
       PolicyDocument:
@@ -82,7 +83,7 @@ Resources:
           - Effect: Allow
             Principal: "*"
             Action: "s3:GetObject"
-            Resource: !Sub "${{FrontendBucket}}/*"
+            Resource: !Sub "${FrontendBucket}/*"
   FrontendDistribution:
     Type: AWS::CloudFront::Distribution
     DependsOn: FrontendBucket
