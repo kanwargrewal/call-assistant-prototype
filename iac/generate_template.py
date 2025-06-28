@@ -9,10 +9,8 @@ def generate_cloudformation():
     default_runtime = os.environ.get("LAMBDA_RUNTIME", "python3.10")
     default_frontend_bucket = os.environ.get("FRONTEND_S3_BUCKET", "call-assistant-frontend-bucket")
 
-    template = f"""
-AWSTemplateFormatVersion: '2010-09-09'
-Description: Call Assistant Deployment
-
+    # Use f-string only for the parameters section with environment variables
+    parameters_section = f"""
 Parameters:
   LambdaS3Bucket:
     Type: String
@@ -37,7 +35,10 @@ Parameters:
   FrontendS3Bucket:
     Type: String
     Default: {default_frontend_bucket}
-    Description: S3 bucket for frontend hosting
+    Description: S3 bucket for frontend hosting"""
+
+    # Static resources section without f-string to avoid CloudFormation syntax conflicts
+    resources_section = """
 
 Resources:
   BackendFunction:
@@ -106,6 +107,14 @@ Resources:
               Forward: none
           Compress: true
 """
+
+    # Combine sections into complete template
+    template = f"""AWSTemplateFormatVersion: '2010-09-09'
+Description: Call Assistant Deployment
+{parameters_section}
+
+{resources_section}"""
+    
     return template
 
 
