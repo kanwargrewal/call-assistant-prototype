@@ -48,5 +48,5 @@ jobs:
 
       - name: Deploy CloudFormation stack
         run: |
-          aws cloudformation deploy --template-file template.yml --stack-name call-assistant
+          aws cloudformation deploy --template-file template.yml --stack-name call-assistant --capabilities CAPABILITY_IAM
 
