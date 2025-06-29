@@ -3,8 +3,8 @@ from typing import Optional, List
 
 
 class Settings(BaseSettings):
-    # Database - using your system user with PostgreSQL
-    database_url: str = "postgresql://postgres:postgres@localhost:5432/call-assistant"
+    # Database - SQLite for Lambda, PostgreSQL for local development
+    database_url: str = "sqlite:///./call-assistant.db"
     
     # Twilio - required from environment variables
     twilio_account_sid: str
@@ -25,7 +25,11 @@ class Settings(BaseSettings):
     environment: str = "development"
     
     # CORS
-    cors_origins: List[str] = ["http://localhost:3000"]
+    cors_origins: List[str] = [
+        "http://localhost:3000", 
+        "https://d2er510n2851u9.cloudfront.net",
+        "*"  # Allow all origins for now
+    ]
     
     webhook_base_url: str
     
