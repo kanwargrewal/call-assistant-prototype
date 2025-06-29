@@ -114,6 +114,20 @@ jobs:
     - name: Build frontend
       run: |
         cd web
+        
+        # Get API Gateway URL from CloudFormation outputs
+        API_URL=$(aws cloudformation describe-stacks \
+          --stack-name ${{ env.STACK_NAME }} \
+          --query 'Stacks[0].Outputs[?OutputKey==`ApiGatewayUrl`].OutputValue' \
+          --output text)
+        
+        if [ -n "$API_URL" ]; then
+          echo "🔗 Using API URL: $API_URL"
+          export NEXT_PUBLIC_API_URL=$API_URL
+        else
+          echo "⚠️  API Gateway URL not found, using default"
+        fi
+        
         npm run build
         echo "✅ Frontend built successfully"
 
