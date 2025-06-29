@@ -78,6 +78,7 @@ jobs:
           --parameter-overrides \
             LambdaS3Bucket=${{ secrets.LAMBDA_S3_BUCKET }} \
             LambdaS3Key=lambda.zip \
+            LambdaHandler=lambda_handler.handler \
           --capabilities CAPABILITY_IAM \
           --no-fail-on-empty-changeset
 
