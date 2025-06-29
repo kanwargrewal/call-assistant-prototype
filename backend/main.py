@@ -87,6 +87,10 @@ app.include_router(admin.router)
 from routers import me
 app.include_router(me.router, prefix="/api")
 
+# Lambda handler using mangum
+from mangum import Mangum
+handler = Mangum(app, lifespan="off")
+
 # Root endpoint
 @app.get("/")
 def read_root():
@@ -122,14 +126,6 @@ async def internal_error_handler(request, exc):
         content={"error": "Internal server error"}
     )
 
-
-# Lambda handler using mangum
-try:
-    from mangum import Mangum
-    handler = Mangum(app, lifespan="off")
-except ImportError:
-    # mangum not available in development
-    pass
 
 if __name__ == "__main__":
     import uvicorn
