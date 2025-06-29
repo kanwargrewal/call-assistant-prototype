@@ -123,6 +123,14 @@ async def internal_error_handler(request, exc):
     )
 
 
+# Lambda handler using mangum
+try:
+    from mangum import Mangum
+    handler = Mangum(app, lifespan="off")
+except ImportError:
+    # mangum not available in development
+    pass
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
