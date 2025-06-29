@@ -7,7 +7,6 @@ def generate_cloudformation():
     default_key = os.environ.get("LAMBDA_S3_KEY", "lambda.zip")
     default_handler = os.environ.get("LAMBDA_HANDLER", "main.handler")
     default_runtime = os.environ.get("LAMBDA_RUNTIME", "python3.10")
-    default_frontend_bucket = os.environ.get("FRONTEND_S3_BUCKET", "call-assistant-frontend-bucket")
 
     # Use f-string only for the parameters section with environment variables
     parameters_section = f"""
@@ -32,10 +31,7 @@ Parameters:
     Default: {default_runtime}
     Description: Lambda runtime version
   
-  FrontendS3Bucket:
-    Type: String
-    Default: {default_frontend_bucket}
-    Description: S3 bucket for frontend hosting"""
+"""
 
     # Static resources section without f-string to avoid CloudFormation syntax conflicts
     resources_section = """
@@ -65,7 +61,6 @@ Resources:
   FrontendBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref FrontendS3Bucket
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: error.html

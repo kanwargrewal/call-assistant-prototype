@@ -78,7 +78,6 @@ jobs:
           --parameter-overrides \
             LambdaS3Bucket=${{ secrets.LAMBDA_S3_BUCKET }} \
             LambdaS3Key=lambda.zip \
-            FrontendS3Bucket=${{ secrets.FRONTEND_S3_BUCKET }} \
           --capabilities CAPABILITY_IAM \
           --no-fail-on-empty-changeset
 
@@ -122,10 +121,23 @@ jobs:
       run: |
         cd web
         
+        # Get bucket name from CloudFormation outputs
+        BUCKET_NAME=$(aws cloudformation describe-stacks \
+          --stack-name ${{ env.STACK_NAME }} \
+          --query 'Stacks[0].Outputs[?OutputKey==`FrontendBucketName`].OutputValue' \
+          --output text)
+        
+        if [ -z "$BUCKET_NAME" ]; then
+          echo "❌ Could not get bucket name from CloudFormation outputs"
+          exit 1
+        fi
+        
+        echo "📦 Deploying to bucket: $BUCKET_NAME"
+        
         # Sync the built files to S3
         if [ -d "out" ]; then
           # Next.js static export
-          aws s3 sync out/ s3://${{ secrets.FRONTEND_S3_BUCKET }}/ --delete
+          aws s3 sync out/ s3://$BUCKET_NAME/ --delete
           echo "✅ Frontend deployed from 'out' directory"
         elif [ -d ".next" ]; then
           # Next.js build (need to handle this differently for static hosting)
@@ -133,11 +145,11 @@ jobs:
           echo "For S3 hosting, add: output: 'export' to next.config.js"
         elif [ -d "dist" ]; then
           # Vite/other build tools
-          aws s3 sync dist/ s3://${{ secrets.FRONTEND_S3_BUCKET }}/ --delete
+          aws s3 sync dist/ s3://$BUCKET_NAME/ --delete
           echo "✅ Frontend deployed from 'dist' directory"
         elif [ -d "build" ]; then
           # Create React App build
-          aws s3 sync build/ s3://${{ secrets.FRONTEND_S3_BUCKET }}/ --delete
+          aws s3 sync build/ s3://$BUCKET_NAME/ --delete
           echo "✅ Frontend deployed from 'build' directory"
         else
           echo "❌ No build output directory found"
