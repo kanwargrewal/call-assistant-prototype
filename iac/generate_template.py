@@ -111,11 +111,11 @@ Resources:
   
   LambdaApiGatewayPermission:
     Type: AWS::Lambda::Permission
+    DependsOn: ApiGateway
     Properties:
-      FunctionName: !GetAtt BackendFunction.Arn
+      FunctionName: !Ref BackendFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*"
   
   FrontendBucket:
     Type: AWS::S3::Bucket
