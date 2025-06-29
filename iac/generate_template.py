@@ -5,7 +5,7 @@ def generate_cloudformation():
     # Default values - can be overridden by CloudFormation parameters
     default_bucket = os.environ.get("LAMBDA_S3_BUCKET", "my-bucket")
     default_key = os.environ.get("LAMBDA_S3_KEY", "lambda.zip")
-    default_handler = os.environ.get("LAMBDA_HANDLER", "main.handler")
+    default_handler = os.environ.get("LAMBDA_HANDLER", "lambda_handler.handler")
     default_runtime = os.environ.get("LAMBDA_RUNTIME", "python3.10")
 
     # Use f-string only for the parameters section with environment variables

@@ -6,15 +6,15 @@ class Settings(BaseSettings):
     # Database - SQLite for Lambda, PostgreSQL for local development
     database_url: str = "sqlite:///./call-assistant.db"
     
-    # Twilio - required from environment variables
-    twilio_account_sid: str
-    twilio_auth_token: str
+    # Twilio - optional for now
+    twilio_account_sid: str = "placeholder"
+    twilio_auth_token: str = "placeholder"
     
-    # OpenAI - required from environment variable
-    openai_api_key: str
+    # OpenAI - optional for now
+    openai_api_key: str = "placeholder"
     
-    # JWT - required from environment variable
-    jwt_secret_key: str
+    # JWT - with default for Lambda
+    jwt_secret_key: str = "default-secret-change-in-production"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     

@@ -38,8 +38,8 @@ jobs:
         # Create deployment package directory
         mkdir -p lambda-package
         
-        # Install dependencies to package directory
-        pip install -r requirements.txt -t lambda-package/
+        # Install dependencies to package directory (use Lambda-specific requirements)
+        pip install -r requirements-lambda.txt -t lambda-package/
         
         # Copy application code
         cp *.py lambda-package/
