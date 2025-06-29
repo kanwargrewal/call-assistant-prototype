@@ -115,7 +115,7 @@ Resources:
       FunctionName: !GetAtt BackendFunction.Arn
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "${ApiGateway}/*/*"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*"
   
   FrontendBucket:
     Type: AWS::S3::Bucket
