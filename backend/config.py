@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import Optional, List
+import os
 
 
 class Settings(BaseSettings):
@@ -24,10 +25,10 @@ class Settings(BaseSettings):
     # Environment
     environment: str = "development"
     
-    # CORS - Allow all origins for now
+    # CORS - Parse from environment or use default
     cors_origins: List[str] = ["*"]
     
-    webhook_base_url: str
+    webhook_base_url: str = "placeholder"
     
     # Email configuration
     smtp_server: str = "smtp.gmail.com"
@@ -35,6 +36,13 @@ class Settings(BaseSettings):
     smtp_username: Optional[str] = None
     smtp_password: Optional[str] = None
     frontend_url: str = "http://localhost:3000"
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Parse CORS_ORIGINS if present in environment
+        cors_env = os.getenv('CORS_ORIGINS')
+        if cors_env:
+            self.cors_origins = [origin.strip() for origin in cors_env.split(',')]
     
     class Config:
         env_file = ".env"

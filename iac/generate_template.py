@@ -54,7 +54,6 @@ Resources:
           TWILIO_AUTH_TOKEN: "placeholder"
           OPENAI_API_KEY: "placeholder"
           WEBHOOK_BASE_URL: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod"
-          CORS_ORIGINS: "https://d2er510n2851u9.cloudfront.net,http://localhost:3000,*"
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
